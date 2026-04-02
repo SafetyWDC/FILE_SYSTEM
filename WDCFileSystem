@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WDC File System</title>
+    <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --wdc-blue: #003D52;
+            --wdc-green: #96C61C;
+            --wdc-grey: #A5A5A5;
+            --light-bg: #f0f2f5;
+        }
+
+        body {
+            font-family: 'Raleway', sans-serif;
+            background-color: var(--light-bg);
+            margin: 0;
+            padding: 10px;
+            color: var(--wdc-blue);
+            display: flex;
+            justify-content: center;
+        }
+
+        .card {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 500px;
+            border-top: 10px solid var(--wdc-green);
+        }
+
+        h1 {
+            font-size: 1.2rem;
+            text-align: center;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .tabs {
+            display: flex;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #eee;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 12px;
+            text-align: center;
+            cursor: pointer;
+            font-weight: 700;
+            color: var(--wdc-grey);
+            transition: 0.3s;
+        }
+
+        .tab.active {
+            color: var(--wdc-blue);
+            border-bottom: 3px solid var(--wdc-blue);
+            background: #fcfcfc;
+        }
+
+        .section {
+            margin-bottom: 15px;
+            padding: 12px;
+            border: 1px solid #f0f0f0;
+            border-radius: 8px;
+        }
+
+        .expiry-section {
+            display: none;
+            border-color: var(--wdc-green);
+            background-color: #f9fff0;
+        }
+
+        label {
+            display: block;
+            font-weight: 700;
+            margin-bottom: 8px;
+            font-size: 0.75rem;
+            color: var(--wdc-blue);
+            text-transform: uppercase;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 8px;
+        }
+
+        select, input, textarea {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #e1e4e8;
+            border-radius: 6px;
+            font-family: 'Raleway', sans-serif;
+            font-size: 1rem;
+            outline: none;
+        }
+
+        textarea { height: 70px; resize: none; border-color: var(--wdc-blue); }
+
+        .btn-action {
+            padding: 0 15px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: 0.2s;
+        }
+
+        .btn-add { background: var(--wdc-green); color: white; }
+        .btn-del { background: #e74c3c; color: white; }
+        .btn-clear { background: var(--wdc-grey); color: white; width: 100%; padding: 8px; margin-top: 5px; font-size: 0.7rem; }
+
+        .check-wrapper { display: flex; gap: 8px; }
+        .check-btn {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #e1e4e8;
+            border-radius: 6px;
+            text-align: center;
+            cursor: pointer;
+            font-weight: 700;
+            background: white;
+        }
+        .check-btn.active {
+            background: var(--wdc-blue);
+            color: white;
+            border-color: var(--wdc-blue);
+        }
+
+        .result-area {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+            border: 2px dashed var(--wdc-grey);
+            text-align: center;
+        }
+
+        .folder-display {
+            background: #eef7e8;
+            color: #2d5a27;
+            padding: 8px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            display: inline-block;
+        }
+
+        #finalName { font-weight: 700; font-size: 1.1rem; word-wrap: break-word; color: #000; display: block; margin-top: 5px;}
+
+        .btn-copy {
+            background-color: var(--wdc-blue);
+            color: white;
+            border: none;
+            width: 100%;
+            padding: 15px;
+            border-radius: 8px;
+            font-weight: 700;
+            cursor: pointer;
+            margin-top: 15px;
+            text-transform: uppercase;
+        }
+
+        #dateInput { margin-top: 10px; display: none; }
+        .hidden { display: none; }
+
+        .logic-guide {
+            margin-top: 20px;
+            padding: 12px;
+            background: #fdfdfd;
+            border: 1px solid #eee;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            color: var(--wdc-grey);
+            line-height: 1.5;
+        }
+
+        .logic-guide strong { color: var(--wdc-blue); }
+
+        footer { margin-top: 20px; text-align: center; font-size: 0.7rem; color: var(--wdc-grey); font-weight: 700; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h1>WDC File System</h1>
+
+    <div class="tabs">
+        <div id="tabNamer" class="tab active" onclick="switchTab('namer')">NAMER</div>
+        <div id="tabCorrector" class="tab" onclick="switchTab('corrector')">CORRECTOR</div>
+    </div>
+
+    <!-- AREA DEL CORRECTOR -->
+    <div id="correctorView" class="hidden">
+        <div class="section" style="background: #fdfdfd; border: 1px solid var(--wdc-blue);">
+            <label>Pega el nombre original aquí</label>
+            <textarea id="oldName" placeholder="Ej: Daily Equipment Inspection — 1825 Site (Responses)" oninput="autoCorrect()"></textarea>
+            <button class="btn-action btn-clear" onclick="resetCorrector()">LIMPIAR CORRECTOR</button>
+        </div>
+    </div>
+
+    <!-- CAMPOS COMUNES -->
+    <div class="section">
+        <label>Sitio / Proyecto</label>
+        <div class="input-group">
+            <select id="siteSel" onchange="update()"></select>
+            <button class="btn-action btn-del" onclick="remove('site')">✕</button>
+        </div>
+        <div class="input-group">
+            <input type="text" id="addSiteInput" placeholder="Añadir nuevo...">
+            <button class="btn-action btn-add" onclick="add('site')">+</button>
+        </div>
+    </div>
+
+    <div class="section">
+        <label>Categoría</label>
+        <div class="input-group">
+            <select id="catSel" onchange="update()"></select>
+            <button class="btn-action btn-del" onclick="remove('cat')">✕</button>
+        </div>
+        <div class="input-group">
+            <input type="text" id="addCatInput" placeholder="Nueva categoría...">
+            <button class="btn-action btn-add" onclick="add('cat')">+</button>
+        </div>
+    </div>
+
+    <div class="section">
+        <label>Detalle (Descripción corta)</label>
+        <input type="text" id="desc" placeholder="ej. John Doe o Restricted Access" oninput="update()">
+    </div>
+
+    <!-- SECCIÓN DE VENCIMIENTO (Solo para TICKET) -->
+    <div id="expiryContainer" class="section expiry-section">
+        <label>Vencimiento (Solo Tickets)</label>
+        <div class="check-wrapper">
+            <div id="btnPerm" class="check-btn active" onclick="setMode('PERMANENT')">PERMANENTE</div>
+            <div id="btnDate" class="check-btn" onclick="setMode('DATE')">FECHA</div>
+        </div>
+        <input type="date" id="dateInput" onchange="update()">
+    </div>
+
+    <div class="result-area">
+        <div class="folder-display">Folder Destino: <span id="targetFolder">01_GENERAL_ADMIN</span></div>
+        <div id="finalName">G_INSP_Detail</div>
+    </div>
+
+    <button class="btn-copy" onclick="copy()">COPIAR NOMBRE FINAL</button>
+    
+    <div class="logic-guide">
+        <strong>Lógica WDC:</strong> [SITIO]_[CATEGORÍA]_[DETALLE]_[VENCIMIENTO*]<br>
+        El folder 01 es Admin Central (G). Los sitios se ordenan secuencialmente. El vencimiento es exclusivo para TICKETS para facilitar auditorías rápidas.
+    </div>
+
+    <footer>Prepared by: Safety WDC</footer>
+</div>
+
+<script>
+    let sites = JSON.parse(localStorage.getItem('w_sites')) || ['G', '1475', '1600', '1825', '1400', '1450', '1340', '1360', 'OTHER'];
+    let cats = JSON.parse(localStorage.getItem('w_cats')) || ['INSP', 'TIMECARD', 'TICKET', 'ORIENTATION', 'OBSERVATION', 'SIGN', 'TALK', 'HEADCOUNT', 'RISK', 'PERMIT', 'MEETING', 'EQUIPMENT'];
+    let mode = 'PERMANENT';
+
+    const folderMap = {
+        'G': '01_GENERAL_ADMIN',
+        '1475': '02_SITE_1475',
+        '1600': '03_SITE_1600',
+        '1825': '04_SITE_1825',
+        '1400': '05_SITE_1400',
+        '1450': '06_SITE_1450',
+        '1340': '07_SITE_1340',
+        '1360': '08_SITE_1360'
+    };
+
+    function init() {
+        refresh('siteSel', sites);
+        refresh('catSel', cats);
+        update();
+    }
+
+    function switchTab(t) {
+        document.getElementById('tabNamer').classList.toggle('active', t === 'namer');
+        document.getElementById('tabCorrector').classList.toggle('active', t === 'corrector');
+        document.getElementById('correctorView').classList.toggle('hidden', t === 'namer');
+        resetCorrector();
+    }
+
+    function resetCorrector() {
+        document.getElementById('oldName').value = '';
+        document.getElementById('desc').value = '';
+        document.getElementById('siteSel').value = 'G';
+        document.getElementById('catSel').value = 'INSP';
+        setMode('PERMANENT');
+        update();
+    }
+
+    function autoCorrect() {
+        const raw = document.getElementById('oldName').value.trim();
+        if(!raw) {
+            resetCorrector();
+            return;
+        }
+
+        let detectedSite = 'G'; 
+        let detectedCat = 'INSP';
+
+        const siteMatch = raw.match(/1475|1600|1825|1400|1450|1340|1360/);
+        if (siteMatch) {
+            detectedSite = siteMatch[0];
+        }
+
+        const low = raw.toLowerCase();
+        if (low.includes('timecard') || low.includes('hours')) detectedCat = 'TIMECARD';
+        else if (low.includes('inspection')) detectedCat = 'INSP';
+        else if (low.includes('equipment') || low.includes('machinery')) detectedCat = 'EQUIPMENT';
+        else if (low.includes('observation') || low.includes('obs')) detectedCat = 'OBSERVATION';
+        else if (low.includes('orient')) detectedCat = 'ORIENTATION';
+        else if (low.includes('talk') || low.includes('crew')) detectedCat = 'TALK';
+        else if (low.includes('permit')) detectedCat = 'PERMIT';
+        else if (low.includes('ticket') || low.includes('cert')) detectedCat = 'TICKET';
+        else if (low.includes('sign')) detectedCat = 'SIGN';
+        else if (low.includes('meeting') || low.includes('meet')) detectedCat = 'MEETING';
+        else if (low.includes('people') || low.includes('headcount')) detectedCat = 'HEADCOUNT';
+
+        document.getElementById('siteSel').value = detectedSite;
+        document.getElementById('catSel').value = detectedCat;
+
+        let detectedDesc = raw.replace(/—/g, ' ')
+                       .replace(/\(Responses\)/gi, '')
+                       .replace(/Site/gi, '')
+                       .replace(/1475|1600|1825|1400|1450|1340|1360/g, '')
+                       .replace(/General/gi, '')
+                       .replace(/Daily|Log|Weekly|Monthly|Timecard|Hours/gi, '')
+                       .replace(/Inspection/gi, '')
+                       .trim()
+                       .replace(/\s+/g, '_')
+                       .replace(/_+/g, '_')
+                       .replace(/^_+|_+$/g, '');
+        
+        document.getElementById('desc').value = detectedDesc;
+        update();
+    }
+
+    function refresh(id, list) {
+        const el = document.getElementById(id);
+        el.innerHTML = '';
+        list.forEach(i => {
+            let o = document.createElement('option');
+            o.value = i; o.textContent = i;
+            el.appendChild(o);
+        });
+    }
+
+    function add(type) {
+        const input = document.getElementById(type === 'site' ? 'addSiteInput' : 'addCatInput');
+        const val = input.value.trim().toUpperCase().replace(/\s+/g, '_');
+        if(!val) return;
+        if(type === 'site') {
+            if(!sites.includes(val)) sites.push(val);
+            localStorage.setItem('w_sites', JSON.stringify(sites));
+            refresh('siteSel', sites);
+        } else {
+            if(!cats.includes(val)) cats.push(val);
+            localStorage.setItem('w_cats', JSON.stringify(cats));
+            refresh('catSel', cats);
+        }
+        input.value = '';
+        update();
+    }
+
+    function remove(type) {
+        const sel = document.getElementById(type === 'site' ? 'siteSel' : 'catSel').value;
+        if(type === 'site') {
+            sites = sites.filter(s => s !== sel);
+            localStorage.setItem('w_sites', JSON.stringify(sites));
+            refresh('siteSel', sites);
+        } else {
+            cats = cats.filter(c => c !== sel);
+            localStorage.setItem('w_cats', JSON.stringify(cats));
+            refresh('catSel', cats);
+        }
+        update();
+    }
+
+    function setMode(m) {
+        mode = m;
+        document.getElementById('btnPerm').classList.toggle('active', m === 'PERMANENT');
+        document.getElementById('btnDate').classList.toggle('active', m === 'DATE');
+        document.getElementById('dateInput').style.display = m === 'DATE' ? 'block' : 'none';
+        update();
+    }
+
+    function update() {
+        const s = document.getElementById('siteSel').value || 'G';
+        const c = document.getElementById('catSel').value || 'INSP';
+        const d = document.getElementById('desc').value.trim().replace(/\s+/g, '_') || 'Detail';
+        
+        let folder = folderMap[s];
+        if (!folder) {
+            folder = `99_SITE_${s}`;
+        }
+        document.getElementById('targetFolder').innerText = folder;
+
+        const expiryCont = document.getElementById('expiryContainer');
+        let finalStr = `${s}_${c}_${d}`;
+
+        if (c === 'TICKET') {
+            expiryCont.style.display = 'block';
+            const e = mode === 'DATE' ? (document.getElementById('dateInput').value || 'DATE') : 'PERMANENT';
+            finalStr += `_${e}`;
+        } else {
+            expiryCont.style.display = 'none';
+        }
+
+        document.getElementById('finalName').textContent = finalStr;
+    }
+
+    function copy() {
+        const text = document.getElementById('finalName').textContent;
+        const dummy = document.createElement("textarea");
+        document.body.appendChild(dummy);
+        dummy.value = text;
+        dummy.select();
+        document.execCommand("copy");
+        document.body.removeChild(dummy);
+        const btn = document.querySelector('.btn-copy');
+        const original = btn.textContent;
+        btn.textContent = '¡COPIADO!';
+        btn.style.background = '#96C61C';
+        setTimeout(() => { btn.textContent = original; btn.style.background = '#003D52'; }, 1500);
+    }
+
+    init();
+</script>
+
+</body>
+</html>
